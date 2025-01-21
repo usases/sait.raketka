@@ -9,10 +9,11 @@ rocketImg.src = "https://cdn-icons-png.flaticon.com/512/1356/1356479.png";
 
 let gameActive = false;
 let x = 0;
-let y = canvas.height;
+let y = canvas.height - 30; // Rocket stays within bounds
 let multiplier = 1;
 let betAmount = 0;
 let potentialWin = 0;
+let crashPoint = generateCrashPoint(); // Generate random crash point
 let path = [];
 let interval;
 
@@ -21,13 +22,25 @@ const cashOutButton = document.getElementById("cashOutButton");
 const betInput = document.getElementById("betAmount");
 const multiplierDisplay = document.getElementById("multiplier");
 const potentialWinDisplay = document.getElementById("potentialAmount");
+const messageDisplay = document.getElementById("messageDisplay"); // Element for displaying messages
+
+function generateCrashPoint() {
+    // Higher chance of crashing before 4x
+    const random = Math.random();
+    if (random < 0.6) {
+        return Math.random() * (4 - 1.5) + 1.5; // 60% chance of crash between 1.5x and 4x
+    } else {
+        return Math.random() * (10 - 4) + 4; // 40% chance of crash between 4x and 10x
+    }
+}
 
 function resetGame() {
     gameActive = false;
     x = 0;
-    y = canvas.height;
+    y = canvas.height - 30; // Reset position within bounds
     multiplier = 1;
     potentialWin = 0;
+    crashPoint = generateCrashPoint(); // Reset crash point
     path = [];
     clearInterval(interval);
     cashOutButton.disabled = true;
@@ -52,12 +65,17 @@ function drawRocket() {
 }
 
 function updateRocketPosition() {
-    multiplier += 0.01; // Gradual multiplier increase
-    x += 2; // Move horizontally
-    y -= 1.2; // Move vertically
+    multiplier += 0.02; // Gradual multiplier increase
+    x += 3; // Move horizontally faster
+    y -= 1.5; // Move vertically slower
 
-    if (x >= canvas.width || y <= 0) {
-        alert("Ракета взорвалась! Вы проиграли.");
+    // Prevent rocket from going out of bounds
+    if (x >= canvas.width) x = canvas.width - 15;
+    if (y <= 15) y = 15;
+
+    if (multiplier >= crashPoint) {
+        messageDisplay.textContent = `Ракета взорвалась на ${multiplier.toFixed(2)}x! Вы проиграли.`;
+        messageDisplay.style.color = "red";
         resetGame();
         return;
     }
@@ -72,8 +90,10 @@ function updateRocketPosition() {
 }
 
 function startGame() {
+    messageDisplay.textContent = ""; // Clear message display
     if (betInput.value <= 0) {
-        alert("Введите корректную сумму ставки.");
+        messageDisplay.textContent = "Введите корректную сумму ставки.";
+        messageDisplay.style.color = "red";
         return;
     }
 
@@ -89,7 +109,8 @@ function startGame() {
 
 function cashOut() {
     if (gameActive) {
-        alert(`Вы забрали выигрыш: $${potentialWin}`);
+        messageDisplay.textContent = `Вы забрали выигрыш: $${potentialWin}`;
+        messageDisplay.style.color = "green";
         resetGame();
     }
 }
